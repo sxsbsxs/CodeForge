@@ -60,7 +60,7 @@ The next APK-builder milestone is to generate per-language Android host projects
 
 Open the repository in Android Studio with JDK 17 and Android SDK 35. The project uses Gradle 8.11.1 and Android Gradle Plugin 8.9.1.
 
-The GitHub Actions workflow downloads Gradle, installs required Android SDK packages, and runs `assembleDebug`. A successful run uploads a `CodeForge-debug` APK artifact. Push a version tag such as `v0.3.0` to publish the APK as a GitHub Release.
+The GitHub Actions workflow downloads Gradle, installs required Android SDK packages, runs unit tests and builds the debug APK. A successful run uploads a `CodeForge-debug` artifact. Push a version tag such as `v0.3.0` to publish a Release automatically. Alternatively, use Actions → Android CI → Run workflow and fill in the optional `release_tag` input to create a versioned Release from the selected commit.
 
 ## Workspace and archives
 
