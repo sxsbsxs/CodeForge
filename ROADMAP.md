@@ -15,7 +15,8 @@
 - [x] GitHub Actions debug APK artifact and tag Release workflow
 - [ ] Interactive stdin, process cancellation and execution resource limits
 - [ ] Device-side validation across Termux versions and Android vendors
-- [ ] Syntax highlighting, diagnostics and richer code completion
+- [x] Basic monochrome syntax highlighting for all four modes
+- [ ] Diagnostics and richer code completion
 
 ## 0.4.0 — local Android APK packaging
 - [ ] Generate an Android host project from Python source (Chaquopy-based template)
