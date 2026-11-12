@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chaquo.python.Python
@@ -296,7 +297,8 @@ private fun CodeForgeScreen(privateDir: File) {
                         fontFamily = FontFamily.Monospace,
                         fontSize = 14.sp,
                         lineHeight = 21.sp
-                    )
+                    ),
+                    visualTransformation = remember(language) { CodeSyntaxTransformation(language) }
                 )
             }
 
