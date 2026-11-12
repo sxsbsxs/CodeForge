@@ -3,6 +3,8 @@ package dev.codeforge
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
 private fun CodeForgeScreen(privateDir: File) {
     val store = remember { ProjectStore(privateDir) }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
     val languages = listOf("Python", "Java", "C++", "JavaScript")
 
     var language by remember { mutableStateOf("Python") }
@@ -51,7 +53,57 @@ private fun CodeForgeScreen(privateDir: File) {
     var output by remember { mutableStateOf("Ready. Code execution stays on this device.") }
     var busy by remember { mutableStateOf(false) }
     var showProjects by remember { mutableStateOf(false) }
+    var showFiles by remember { mutableStateOf(false) }
     var projects by remember { mutableStateOf(store.listProjects()) }
+    var projectFiles by remember { mutableStateOf(store.listFiles(projectName)) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        if (uri != null) {
+            val selectedProject = projectName
+            scope.launch {
+                output = withContext(Dispatchers.IO) {
+                    try {
+                        val stream = context.contentResolver.openOutputStream(uri)
+                            ?: error("Cannot open the selected ZIP destination")
+                        store.exportProject(selectedProject, stream)
+                        "Exported $selectedProject.zip"
+                    } catch (t: Throwable) {
+                        "Export failed: ${t.message ?: t.javaClass.simpleName}"
+                    }
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                output = withContext(Dispatchers.IO) {
+                    try {
+                        val stream = context.contentResolver.openInputStream(uri)
+                            ?: error("Cannot open the selected ZIP file")
+                        val importedName = store.importProject(stream)
+                        projects = store.listProjects()
+                        val loaded = store.loadFirstCodeFile(importedName)
+                        if (loaded != null) {
+                            projectName = importedName
+                            fileName = loaded.first
+                            language = ProjectStore.languageForFile(loaded.first)
+                            source = loaded.second
+                            projectFiles = store.listFiles(importedName)
+                        }
+                        "Imported project: $importedName"
+                    } catch (t: Throwable) {
+                        "Import failed: ${t.message ?: t.javaClass.simpleName}"
+                    }
+                }
+            }
+        }
+    }
 
     fun selectLanguage(next: String) {
         language = next
@@ -64,6 +116,7 @@ private fun CodeForgeScreen(privateDir: File) {
         return try {
             store.save(projectName, fileName, source)
             projects = store.listProjects()
+            projectFiles = store.listFiles(projectName)
             "Saved locally: $projectName/$fileName"
         } catch (t: Throwable) {
             "Save failed: ${t.message ?: t.javaClass.simpleName}"
@@ -81,7 +134,7 @@ private fun CodeForgeScreen(privateDir: File) {
         )
     ) {
         Column(
-            Modifier.fillMaxSize().background(Paper).padding(horizontal = 16.dp, vertical = 12.dp)
+            Modifier.fillMaxSize().background(Paper).padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
@@ -91,7 +144,7 @@ private fun CodeForgeScreen(privateDir: File) {
                 Text("LOCAL IDE", fontSize = 11.sp, color = Muted, modifier = Modifier.padding(top = 8.dp))
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
@@ -105,7 +158,7 @@ private fun CodeForgeScreen(privateDir: File) {
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = projectName,
@@ -119,28 +172,24 @@ private fun CodeForgeScreen(privateDir: File) {
                     onValueChange = { fileName = it },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    label = { Text("File") }
+                    label = { Text("File / path") }
                 )
             }
 
-            Spacer(Modifier.height(6.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { output = saveCurrent() },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Save") }
-                Box(Modifier.weight(1f)) {
+            Spacer(Modifier.height(5.dp))
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutlinedButton(onClick = { output = saveCurrent() }) { Text("Save") }
+                Box {
                     OutlinedButton(
-                        onClick = { projects = store.listProjects(); showProjects = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("Open project") }
-                    DropdownMenu(
-                        expanded = showProjects,
-                        onDismissRequest = { showProjects = false }
-                    ) {
+                        onClick = { projects = store.listProjects(); showProjects = true }
+                    ) { Text("Projects") }
+                    DropdownMenu(expanded = showProjects, onDismissRequest = { showProjects = false }) {
                         if (projects.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("No saved projects yet") },
+                                text = { Text("No saved projects") },
                                 onClick = { showProjects = false },
                                 enabled = false
                             )
@@ -151,6 +200,7 @@ private fun CodeForgeScreen(privateDir: File) {
                                     onClick = {
                                         showProjects = false
                                         projectName = name
+                                        projectFiles = store.listFiles(name)
                                         val loaded = store.loadFirstCodeFile(name)
                                         if (loaded != null) {
                                             fileName = loaded.first
@@ -166,23 +216,70 @@ private fun CodeForgeScreen(privateDir: File) {
                         }
                     }
                 }
+                Box {
+                    OutlinedButton(
+                        onClick = { projectFiles = store.listFiles(projectName); showFiles = true }
+                    ) { Text("Files") }
+                    DropdownMenu(expanded = showFiles, onDismissRequest = { showFiles = false }) {
+                        if (projectFiles.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("Save a file first") },
+                                onClick = { showFiles = false },
+                                enabled = false
+                            )
+                        } else {
+                            projectFiles.forEach { name ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        showFiles = false
+                                        try {
+                                            fileName = name
+                                            language = ProjectStore.languageForFile(name)
+                                            source = store.read(projectName, name)
+                                            output = "Opened $projectName/$name"
+                                        } catch (t: Throwable) {
+                                            output = "Open failed: ${t.message}"
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
                 OutlinedButton(
                     onClick = {
                         projectName = "Project${System.currentTimeMillis() % 100000}"
                         fileName = ProjectStore.defaultFileName(language)
                         source = ProjectStore.starter(language)
+                        projectFiles = emptyList()
                         output = "New project ready. Press Save to keep it."
-                    },
-                    modifier = Modifier.weight(1f)
+                    }
                 ) { Text("New") }
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(5.dp))
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { exportLauncher.launch("$projectName.zip") },
+                    enabled = projectFiles.isNotEmpty()
+                ) { Text("Export ZIP") }
+                OutlinedButton(
+                    onClick = {
+                        importLauncher.launch(arrayOf("application/zip", "application/x-zip-compressed"))
+                    }
+                ) { Text("Import ZIP") }
+            }
+
+            Spacer(Modifier.height(6.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(fileName, color = Muted, fontSize = 12.sp)
                 Text(ProjectStore.runnerLabel(language), color = Muted, fontSize = 11.sp)
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(5.dp))
 
             Box(
                 Modifier.weight(1f).fillMaxWidth()
@@ -202,7 +299,7 @@ private fun CodeForgeScreen(privateDir: File) {
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(9.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
@@ -237,11 +334,11 @@ private fun CodeForgeScreen(privateDir: File) {
                 ) { Text("Package APK") }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(9.dp))
             Text("OUTPUT", fontSize = 10.sp, letterSpacing = 2.sp, color = Muted)
             Spacer(Modifier.height(5.dp))
             Box(
-                Modifier.fillMaxWidth().height(112.dp)
+                Modifier.fillMaxWidth().height(105.dp)
                     .background(Ink, RoundedCornerShape(10.dp)).padding(12.dp)
             ) {
                 Text(
