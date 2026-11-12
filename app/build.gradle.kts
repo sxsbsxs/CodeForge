@@ -12,8 +12,8 @@ android {
         applicationId = "dev.codeforge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
     buildFeatures { compose = true }
@@ -35,6 +35,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("org.mozilla:rhino:1.7.15")
     implementation("io.github.beanshell:bsh:2.1.1")
     debugImplementation("androidx.compose.ui:ui-tooling")

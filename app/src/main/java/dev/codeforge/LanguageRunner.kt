@@ -1,20 +1,26 @@
 package dev.codeforge
 
+import android.content.Context
 import com.chaquo.python.Python
 
 object LanguageRunner {
-    fun run(language: String, source: String): String {
+    suspend fun run(language: String, source: String, context: Context): String {
         return try {
             when (language) {
                 "Python" -> runPython(source)
-                "Java" -> EmbeddedJavaRunner.run(source)
+                "Java" -> TermuxRunner.runJava(context, source) ?: runJavaFallback(source)
                 "JavaScript" -> EmbeddedJavaScriptRunner.run(source)
-                "C++" -> "C++ runner unavailable: this APK does not include an Android arm64 Clang compiler and sysroot. No cloud execution is performed."
+                "C++" -> TermuxRunner.runCpp(context, source)
                 else -> "Unsupported language: $language"
             }
         } catch (t: Throwable) {
             "Execution error: ${t.message ?: t.javaClass.simpleName}"
         }
+    }
+
+    private fun runJavaFallback(source: String): String {
+        return EmbeddedJavaRunner.run(source) +
+            "\n\n[Fallback] Termux OpenJDK is not configured. Install it to compile and run full Java source with javac."
     }
 
     private fun runPython(source: String): String {

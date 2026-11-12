@@ -1,43 +1,53 @@
 # CodeForge
 
-CodeForge is a local-first Android coding workspace built with Kotlin and Jetpack Compose. Its goal is to let users edit and execute code on their Android device, then package supported projects as Android apps without sending source code to a remote compiler.
+CodeForge is a local-first Android coding workspace built with Kotlin and Jetpack Compose. The app keeps source files in its private workspace and does not send user code to a hosted compiler.
 
-## Languages and current execution support
+## Language support
 
-| Language | Engine in this version | Status |
+| Language | Local runtime/compiler | Current support |
 |---|---|---|
-| Python | Embedded CPython 3.11 via Chaquopy | Local script execution |
-| JavaScript | Embedded Rhino ES6 interpreter | Local script execution |
-| Java | BeanShell interpreter | Local Java-like statements; not a full javac toolchain |
-| C++ | Android Clang/NDK integration | Not yet bundled; the UI reports this clearly |
+| Python | Embedded CPython 3.11 via Chaquopy | Runs Python scripts inside CodeForge |
+| JavaScript | Embedded Rhino ES6 interpreter | Runs JavaScript locally |
+| Java | Termux OpenJDK / javac, BeanShell fallback | Compiles and runs Java source locally when Termux is configured; otherwise interprets Java-like statements |
+| C++ | Termux clang++ | Compiles and runs C++ locally when Termux is configured |
 
-Java mode uses BeanShell to interpret Java-style statements. It does not compile ordinary Java projects into DEX. C++ execution requires an Android-native Clang toolchain and sysroot; neither is currently shipped in the APK.
+## C++ and full Java setup (optional Termux toolchain)
 
-## Features in 0.2.0
+CodeForge can use Termux as a local compiler provider. Source is sent through Termux's standard-input command interface and compiled/executed inside the Termux app sandbox. It is not uploaded to a cloud service.
 
-- Monochrome Android UI.
-- Python, Java, C++ and JavaScript editor modes.
-- Local Python, JavaScript and Java-snippet execution.
-- Save and reopen named projects in the app-private workspace.
-- Explicit capability messages instead of sending source code to a server.
-- GitHub Actions debug APK artifact and tag-based Release publishing.
+1. Install a compatible Termux build.
+2. Open Termux and run: pkg update, then pkg install clang openjdk-17.
+3. Enable external command requests by adding allow-external-apps=true to ~/.termux/termux.properties. Restart Termux after changing the setting.
+4. In Android Settings, open CodeForge → App info → Permissions → Additional permissions and grant “Run commands in Termux environment”.
 
-## Build
+Termux's external command interface requires the permission above and allow-external-apps=true. The result callback used by CodeForge requires Termux version 0.109 or later. See the official Termux RUN_COMMAND documentation: https://github.com/termux/termux-app/wiki/RUN_COMMAND-Intent.
 
-Open the repository in Android Studio with Android SDK 35 and JDK 17 installed. The project uses Gradle 8.11.1 and Android Gradle Plugin 8.9.1.
+C++ mode compiles a C++17 source file with clang++ then executes it locally. Java mode compiles Java statements inside a generated Main class, or accepts a complete Main class, using javac. Console input is not yet interactive. Source passed to the Termux interface is limited to 300 KB to stay below Android's Intent size limit.
 
-The GitHub Actions workflow downloads Gradle, installs the required Android SDK packages, and runs the assembleDebug Gradle task.
+## Features in 0.3.0
 
-The debug APK is attached to each successful Actions run as the CodeForge-debug artifact. Push a version tag such as v0.2.0 to publish it as a GitHub Release.
+- Black-and-white Jetpack Compose coding workspace.
+- Four language modes.
+- Embedded Python and JavaScript execution.
+- Java snippet interpreter fallback.
+- Optional full Java and C++ compile/run through Termux.
+- Save and reopen projects in app-private storage.
+- GitHub Actions APK artifact and tag-based Release workflow.
 
 ## APK packaging status
 
-The Package APK action currently explains the prerequisites and limitations; it does not claim to produce an APK yet. A genuine local APK builder needs a local JDK, Gradle, Android SDK platform/build-tools and often NDK/CMake, plus a per-language Android host template. That build pipeline is the next major milestone. No user source code is uploaded to GitHub Actions or a hosted compiler by the app.
+The Package APK action currently reports the per-language build prerequisites; it does not yet generate a user's standalone APK. Running code and building a separate Android application are different operations. A true local APK builder still needs Android project templates plus a local JDK, Gradle, Android SDK platform/build-tools, and NDK/CMake for native projects. This is the next milestone. No source code is uploaded to GitHub Actions by the mobile app.
+
+## Build CodeForge
+
+Open the repository in Android Studio with JDK 17 and Android SDK 35. The project uses Gradle 8.11.1 and Android Gradle Plugin 8.9.1.
+
+The GitHub Actions workflow downloads Gradle, installs required Android SDK packages and runs the assembleDebug task. A successful run uploads a CodeForge-debug APK artifact. Push a version tag such as v0.3.0 to publish a GitHub Release.
 
 ## Workspace storage
 
-Projects are stored under the app's private files directory in projects/<project-name>/. They remain local to the app installation. Export/import through Android's Storage Access Framework is planned.
+Projects are stored under the app's private files directory in projects/<project-name>/. They remain local to the app installation. Storage Access Framework import/export and a multi-file tree are planned.
 
 ## License
 
-The CodeForge project source is licensed under MIT. Third-party libraries retain their own licenses; see THIRD_PARTY_NOTICES.md.
+CodeForge-authored source is licensed under MIT. Third-party libraries retain their own licenses; see THIRD_PARTY_NOTICES.md.

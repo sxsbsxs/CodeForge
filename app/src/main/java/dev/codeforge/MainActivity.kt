@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
 private fun CodeForgeScreen(privateDir: File) {
     val store = remember { ProjectStore(privateDir) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current.applicationContext
     val languages = listOf("Python", "Java", "C++", "JavaScript")
 
     var language by remember { mutableStateOf("Python") }
@@ -207,9 +209,11 @@ private fun CodeForgeScreen(privateDir: File) {
                         if (!busy) {
                             output = saveCurrent()
                             busy = true
+                            val runLanguage = language
+                            val runSource = source
                             scope.launch {
                                 output = withContext(Dispatchers.IO) {
-                                    LanguageRunner.run(language, source)
+                                    LanguageRunner.run(runLanguage, runSource, context)
                                 }
                                 busy = false
                             }
@@ -223,10 +227,10 @@ private fun CodeForgeScreen(privateDir: File) {
                 OutlinedButton(
                     onClick = {
                         output = when (language) {
-                            "Python" -> "Python APK export is not available yet. The embedded Python engine runs scripts locally; packaging a standalone app still needs an Android host project and a local Gradle/JDK/SDK build toolchain."
-                            "Java" -> "Java snippet execution is available. Standalone APK packaging requires a generated Android project plus local Gradle/JDK/Android SDK."
-                            "JavaScript" -> "JavaScript execution is available through the embedded Rhino engine. APK packaging requires a WebView/Android host template and local Gradle/JDK/Android SDK."
-                            else -> "C++ execution needs an Android-native Clang toolchain and sysroot. This build does not bundle them and will not upload your source to a cloud compiler."
+                            "Python" -> "Python APK export is not available yet. The embedded Python engine runs scripts locally; packaging still needs a local Android build toolchain."
+                            "Java" -> "Java can compile and run locally through Termux OpenJDK. Creating an APK still needs the Android SDK, Gradle and a generated app host."
+                            "JavaScript" -> "JavaScript runs locally through Rhino. APK packaging needs a WebView Android host template and the local Android build toolchain."
+                            else -> "C++ can compile locally through Termux clang++. Packaging an Android app needs the Android NDK/CMake and a native host template."
                         }
                     },
                     modifier = Modifier.weight(1f)
