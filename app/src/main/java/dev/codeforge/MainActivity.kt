@@ -82,24 +82,25 @@ private fun CodeForgeScreen(privateDir: File) {
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                output = withContext(Dispatchers.IO) {
-                    try {
+                try {
+                    val imported = withContext(Dispatchers.IO) {
                         val stream = context.contentResolver.openInputStream(uri)
                             ?: error("Cannot open the selected ZIP file")
                         val importedName = store.importProject(stream)
-                        projects = store.listProjects()
-                        val loaded = store.loadFirstCodeFile(importedName)
-                        if (loaded != null) {
-                            projectName = importedName
-                            fileName = loaded.first
-                            language = ProjectStore.languageForFile(loaded.first)
-                            source = loaded.second
-                            projectFiles = store.listFiles(importedName)
-                        }
-                        "Imported project: $importedName"
-                    } catch (t: Throwable) {
-                        "Import failed: ${t.message ?: t.javaClass.simpleName}"
+                        importedName to store.loadFirstCodeFile(importedName)
                     }
+                    projects = store.listProjects()
+                    projectName = imported.first
+                    projectFiles = store.listFiles(imported.first)
+                    val loaded = imported.second
+                    if (loaded != null) {
+                        fileName = loaded.first
+                        language = ProjectStore.languageForFile(loaded.first)
+                        source = loaded.second
+                    }
+                    output = "Imported project: ${imported.first}"
+                } catch (t: Throwable) {
+                    output = "Import failed: ${t.message ?: t.javaClass.simpleName}"
                 }
             }
         }
