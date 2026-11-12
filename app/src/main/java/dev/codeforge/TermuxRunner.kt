@@ -84,14 +84,14 @@ object TermuxRunner {
             cat > main.cpp || exit 91
             clang++ -std=c++17 -O0 -g0 main.cpp -o main
             compile_status=$?
-            if [ "$compile_status" -ne 0 ]; then
+            if [ "${'$'}compile_status" -ne 0 ]; then
                 rm -f main.cpp main
-                exit "$compile_status"
+                exit "${'$'}compile_status"
             fi
             ./main
             run_status=$?
             rm -f main.cpp main
-            exit "$run_status"
+            exit "${'$'}run_status"
         """.trimIndent()
 
         return try {
@@ -120,14 +120,14 @@ object TermuxRunner {
             cat > Main.java || exit 91
             javac Main.java
             compile_status=$?
-            if [ "$compile_status" -ne 0 ]; then
+            if [ "${'$'}compile_status" -ne 0 ]; then
                 rm -f Main.java Main*.class
-                exit "$compile_status"
+                exit "${'$'}compile_status"
             fi
             java Main
             run_status=$?
             rm -f Main.java Main*.class
-            exit "$run_status"
+            exit "${'$'}run_status"
         """.trimIndent()
 
         return try {
@@ -139,7 +139,7 @@ object TermuxRunner {
     }
 
     private fun toJavaSource(source: String): String {
-        if (Regex("""\\b(class|interface|enum|record)\\s+Main\\b""").containsMatchIn(source)) {
+        if (Regex("""\b(class|interface|enum|record)\s+Main\b""").containsMatchIn(source)) {
             return source
         }
         val imports = source.lineSequence()
@@ -147,14 +147,14 @@ object TermuxRunner {
             .toList()
         val body = source.lineSequence()
             .filterNot { it.trim().startsWith("import ") }
-            .joinToString("\\n")
+            .joinToString("\n")
         return buildString {
-            if (imports.isNotEmpty()) append(imports.joinToString("\\n")).append("\\n")
-            append("public class Main {\\n")
-            append("  public static void main(String[] args) throws Exception {\\n")
-            append(body).append("\\n")
-            append("  }\\n")
-            append("}\\n")
+            if (imports.isNotEmpty()) append(imports.joinToString("\n")).append("\n")
+            append("public class Main {\n")
+            append("  public static void main(String[] args) throws Exception {\n")
+            append(body).append("\n")
+            append("  }\n")
+            append("}\n")
         }
     }
 
@@ -205,12 +205,12 @@ object TermuxRunner {
             if (result.stdout.isNotBlank()) add(result.stdout.trimEnd())
             if (result.stderr.isNotBlank()) add(result.stderr.trimEnd())
         }
-        val content = sections.joinToString("\\n")
+        val content = sections.joinToString("\n")
         return when {
             result.exitCode == 0 && content.isBlank() -> "$language finished successfully (no output)."
             result.exitCode == 0 -> content
             content.isBlank() -> "$language failed with exit code ${result.exitCode}."
-            else -> "$content\\n\\nProcess exited with code ${result.exitCode}."
+            else -> "$content\n\nProcess exited with code ${result.exitCode}."
         }
     }
 }
