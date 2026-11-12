@@ -39,4 +39,5 @@ dependencies {
     implementation("org.mozilla:rhino:1.7.15")
     implementation("io.github.beanshell:bsh:2.1.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    testImplementation("junit:junit:4.13.2")
 }
