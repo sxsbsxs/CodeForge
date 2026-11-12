@@ -17,6 +17,7 @@ C++ and full Java compilation are optional and use Termux locally. The app has n
 
 - Black-and-white Jetpack Compose workspace.
 - Four language modes and starter snippets.
+- Lightweight monochrome syntax highlighting for keywords, comments, strings and numbers.
 - Local Python and JavaScript execution.
 - Java compile/run via Termux OpenJDK, with BeanShell fallback.
 - C++17 compile/run via Termux clang++.
