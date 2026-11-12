@@ -177,10 +177,28 @@ class ProjectStore(private val privateDir: File) {
         }
 
         fun starter(language: String): String = when (language) {
-            "Python" -> "print('Hello from CodeForge!')\\nanswer = 6 * 7\\nprint(answer)\\n"
-            "Java" -> "int answer = 6 * 7;\\nSystem.out.println(\\"Hello from CodeForge!\\");\\nSystem.out.println(answer);\\n"
-            "C++" -> "#include <iostream>\\nint main() {\\n    std::cout << \\"Hello from CodeForge!\\\\n\\";\\n    return 0;\\n}\\n"
-            else -> "console.log('Hello from CodeForge!');\\nconsole.log(6 * 7);\\n"
+            "Python" -> """
+                print('Hello from CodeForge!')
+                answer = 6 * 7
+                print(answer)
+            """.trimIndent()
+            "Java" -> """
+                int answer = 6 * 7;
+                System.out.println("Hello from CodeForge!");
+                System.out.println(answer);
+            """.trimIndent()
+            "C++" -> """
+                #include <iostream>
+
+                int main() {
+                    std::cout << "Hello from CodeForge!\\n";
+                    return 0;
+                }
+            """.trimIndent()
+            else -> """
+                console.log('Hello from CodeForge!');
+                console.log(6 * 7);
+            """.trimIndent()
         }
 
         fun runnerLabel(language: String): String = when (language) {
