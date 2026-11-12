@@ -1,16 +1,29 @@
 # Roadmap
 
-## 0.1.0 — foundation
+## 0.2.0 — local editor and embedded interpreters
 - [x] Android Compose shell with monochrome UI
 - [x] Embedded Python 3.11 runtime via Chaquopy
-- [x] Local Python execution and captured stdout
-- [x] GitHub Actions debug APK workflow
-- [ ] Persist/open project files and editor tabs
-- [ ] JavaScript runtime adapter (QuickJS or equivalent)
-- [ ] Java compiler/runtime strategy for Android
-- [ ] C/C++ Clang/NDK toolchain packaging
+- [x] Rhino JavaScript interpreter
+- [x] BeanShell Java-statement interpreter
+- [x] Save and reopen projects in private local storage
+- [x] GitHub Actions debug APK artifact and tag Release workflow
+- [ ] C/C++ Android-native compiler integration
+- [ ] Persistent multi-file project tree and tabs
+- [ ] Import/export projects using Android Storage Access Framework
 
-## APK packaging reality
-Building an Android APK locally is not equivalent to running a source file. Each target needs Android SDK/Gradle, a compatible JDK, Android platform/build-tools, and (for native code) NDK/CMake. Shipping a full Android build toolchain inside an ordinary phone app is very large and has device/storage constraints. CodeForge will expose packaging only after the relevant local toolchain is installed and verified; it will never silently send user source code to a cloud compiler.
+## 0.3.0 — language toolchains
+- [ ] Evaluate an Android-compatible Clang/LLVM distribution and its licensing/ABI constraints
+- [ ] Add a true C/C++ compiler with compile diagnostics
+- [ ] Decide on a Java source-to-DEX pipeline (compiler plus D8) rather than presenting interpretation as javac
+- [ ] Add execution timeouts, cancellation and resource limits
 
-Python APK packaging will use a dedicated Android-compatible packaging path. JavaScript, Java and C++ need their own Android project templates and local build integration. The current app does not claim those builders are complete.
+## 0.4.0 — Android packaging
+- [ ] Generate an Android host project from a Python project (Chaquopy-based template)
+- [ ] Generate a WebView-based Android host project from a JavaScript project
+- [ ] Generate Java/Kotlin Android project templates and DEX packaging
+- [ ] Generate NDK/CMake Android project templates for C/C++
+- [ ] Build/sign APKs locally after a verified on-device JDK/Gradle/SDK/NDK toolchain is installed
+
+## Important packaging constraint
+
+Running a source file and building an Android APK are separate operations. A genuine local APK builder needs a local JDK, Gradle, Android SDK platform/build-tools and often NDK/CMake. This app does not bundle that very large toolchain yet and does not claim that APK packaging works. CodeForge will not silently upload user source code to a cloud compiler.
